@@ -10,20 +10,14 @@ import math
 import matplotlib.colors as mcolors
 import numpy as np
 from sklearn import metrics
-import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn import preprocessing
-import operator
 from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import roc_auc_score, roc_curve
 from tabulate import tabulate
 
 
 DATA_PATH = r"heart_disease.dat"
 matrix = []
 matrix_decision_class = []
-
-# number_of_folds = 10
 
 nr_pos_class = 0
 nr_neg_class = 0
@@ -33,12 +27,12 @@ mean_fpr = np.linspace(0, 1, 1000)
 positive_class = None
 negative_class = None
 
-tp_CV = []
-fn_CV = []
-fp_CV = []
-tn_CV = []
-no_p_CV = []
-no_n_CV = []
+tp_CV = 0
+fn_CV = 0
+fp_CV = 0
+tn_CV = 0
+no_p_CV = 0
+no_n_CV = 0
 roc_CV = []
 tpr_CV = []
 
@@ -68,15 +62,14 @@ with open(DATA_PATH, "r") as file:
             
         matrix.append(tmp_row)  
 
-print("________________________________")
-nr_objects = len(matrix)
-print("nr of objects: {}".format(nr_objects))
-print("matrix_decision_class: {}".format(matrix_decision_class))
-print("**********************************")
+# print("________________________________")
+# nr_objects = len(matrix)
+# print("nr of objects: {}".format(nr_objects))
+# print("matrix_decision_class: {}".format(matrix_decision_class))
 
 def split_data(matrix,matrix_decision_class ):
-    positive_class = None
-    negative_class = None
+    global positive_class
+    global negative_class
     row=0
     column=-1
     matrix = np.array(matrix)
@@ -94,54 +87,19 @@ def split_data(matrix,matrix_decision_class ):
         print("TRAIN:", train_index, "TEST:", test_index)
         x_train, x_test = matrix[train_index], matrix[test_index]
         y_train, y_test = matrix_decision_class[train_index], matrix_decision_class[test_index]
-        kNN_classifier(y_train, y_test,  x_train, x_test, column, row, matrix_decision_class,positive_class,negative_class)  
-
-        tp=float(sum(tp_CV))
-        tp=tp/len(tp_CV)
-        fn=float(sum(fn_CV))
-        fn=fn/len(fn_CV)
-        fp=float(sum(fp_CV))
-        fp=fp/len(fp_CV)
-        tn=float(sum(tn_CV))
-        tn=tn/len(tn_CV)
-        no_positive_class = float(sum(no_p_CV))
-        no_positive_class = no_positive_class/len(no_p_CV)
-        no_negative_class = float(sum(no_n_CV))
-        no_negative_class = no_negative_class/len(no_n_CV)
+        kNN_classifier(y_train, y_test,  x_train, x_test, column, row, matrix_decision_class)  
         roc_score = float(sum(roc_CV))
         try:
             roc_score = round(roc_score/len(roc_CV),5)
         except:
-            roc_score = 0
-        # all_fpr = mean_fpr
-        # all_tpr = np.mean(tpr_CV, axis=0)
-        # all_tpr[0] = 0.0
-        # all_tpr[-1] = 1.0
-        # cm = [[tp,fn],[fp,tn]]   
-        count = 0  
-        count += 1
-        print(f"let's see whats in here: {count}")         
+            roc_score = 0       
     
     return y_train, y_test,  x_train, x_test
 
-
-
-# no_rows = math.ceil((number_of_folds+1)/5)
-# fig, ax = plt.subplots(no_rows, 5, figsize=(11,2*no_rows),num='ROC',constrained_layout=True)
-# for x in range(0,no_rows):
-#     for y in range(0,5):
-#         ax[x,y].set_axis_off()
-l_colors = [(k, v) for k, v in mcolors.TABLEAU_COLORS.items()]
-def get_color(i:int):
-    i = i%len(l_colors)
-    return l_colors[i][1]
-
-
-
-def learn_model(data):
+def learn_model(data,no_p,no_n):
     print("________________________________")
     confussion_matrix = data
-    print(confussion_matrix)
+    #print(confussion_matrix)
     t_p =confussion_matrix[0][0]
     t_n =confussion_matrix[1][1]
     f_p =confussion_matrix[1][0]
@@ -157,52 +115,62 @@ def learn_model(data):
     print("True negative: {}".format(t_n))
     print("False positive: {}".format(f_p))
     print("False negative: {}".format(f_n))
-    print("================================")
 
-    precision = round(t_p / (t_p + f_n), 5) #precision = metrics.precision_score()
-    if math.isnan(precision):
-        precision = float(0)
+    try:
+        precision = round(t_p / (t_p + f_n), 5) #precision = metrics.precision_score()
+    except:
+        precision = float(1)
 
-    specifity = round( t_n / (t_n + f_p), 5)
-    if math.isnan(specifity):
-        specifity = float(0)
+    try:
+        specifity = round( t_n / (t_n + f_p), 5)
+    except:
+        specifity = float(1)
 
-    total_acc = round((t_n + t_p) / (t_p + f_n + t_n + f_p), 5)
-    if math.isnan(total_acc):
-        total_acc = float(0)
+    try:
+        total_acc = round((t_n + t_p) / (t_p + f_n + t_n + f_p), 5)
+    except:
+        total_acc = float(1)
 
-    balance_acc = round((specifity + precision)/2, 5)
-    if math.isnan(balance_acc):
+    try:
+        balance_acc = round((specifity + precision)/2, 5)
+    except:
         balance_acc = float(0)
 
-    recall = round(t_p / (t_p + f_p), 5)
-    if math.isnan(recall):
-        recall = float(0)
+    try:
+        recall = round(t_p / (t_p + f_p), 5)
+    except:
+        recall = float(1)
 
-    true_neg_rate = round(t_n / (t_n + f_n), 5)
-    if math.isnan(true_neg_rate):
+    try:
+        true_neg_rate = round(t_n / (t_n + f_n), 5)
+    except:
         true_neg_rate = float(0)
 
-    cover_pos = round((t_p + f_n) / nr_pos_class, 5)
-    if math.isnan(cover_pos):
-        cover_pos = float(0)
+    try:
+        cover_pos = round((t_p + f_n) / no_p, 5)
+    except:
+        cover_pos = float(1)
 
-    cover_neg = round((t_n + f_p) / nr_neg_class, 5)
-    if math.isnan(cover_neg) or np.isinf(cover_neg):
-        cover_neg = float(0)
+    try:
+        cover_neg = round((t_n + f_p) / no_n, 5)
+    except:
+        cover_neg = float(1)
 
-    total_cover = round((t_p + f_n + t_n + f_p) / (nr_pos_class + nr_neg_class), 5)
-    if math.isnan(total_cover) or np.isinf(total_cover):
-        total_cover = float(0)
+    try:
+        total_cover = round((t_p + f_n + t_n + f_p) / (no_p + no_n), 5)
+    except:
+        total_cover = float(1)
 
-    f1_score = round((precision * recall * 2) / (recall + precision), 5)
-    if math.isnan(f1_score):
+    try:
+        f1_score = round((precision * recall * 2) / (recall + precision), 5)
+    except:
         f1_score = float(0)
 
-    g_mean = round(math.sqrt(recall * specifity), 5)
-    if math.isnan(g_mean):
+    try:
+        g_mean = round(math.sqrt(recall * specifity), 5)
+    except:
         g_mean = float(0)
-
+    print("================================")
     print("Precision:           {}".format(precision))
     print("Specifity:           {}".format(specifity))
     print("Total accuracy:      {}".format(total_acc))
@@ -214,10 +182,11 @@ def learn_model(data):
     print("Total coverage:      {}".format(total_cover))
     print("F1 score:            {}".format(f1_score))
     print("================================")
-    print("**********************************")
     return t_p, t_n, f_p, f_n, precision, specifity, total_acc, balance_acc, recall, true_neg_rate, cover_neg, cover_pos, total_cover, f1_score, g_mean
 
-def kNN_classifier(y_train, y_test,  x_train, x_test, column, row, matrix_decision_class,positive_class,negative_class):
+def kNN_classifier(y_train, y_test,  x_train, x_test, column, row, matrix_decision_class):
+    global positive_class
+    global negative_class
     print("________________________________")
     for i in range(1, 2):
         classifier = KNeighborsClassifier(metric="euclidean", n_neighbors=i)
@@ -249,41 +218,68 @@ def kNN_classifier(y_train, y_test,  x_train, x_test, column, row, matrix_decisi
                 no_negative_class +=1
         print(f"y_test: {y_test}")
         print(f"y_pred: {y_pred}")
-        cm = metrics.confusion_matrix(y_test, y_pred)
-        print(f"cm: {cm}")
-        t_p, t_n, f_p, f_n, precision, specifity, total_acc, balance_acc, recall, true_neg_rate, cover_neg, cover_pos, total_cover, f1_score, g_mean = learn_model(cm)
-        y_pred_proba = classifier.predict_proba(x_test)[::,1]
+        # cm = metrics.confusion_matrix(y_test, y_pred)
+        cm = [[0,0],[0,0]]
+        no_p = 0
+        no_n = 0
+        if y_test == positive_class & y_pred == positive_class:
+            cm[0][0] = 1
+            no_p += 1
+        elif y_test == negative_class & y_pred == negative_class:
+            cm[1][1] = 1
+            no_n +=1
+        elif y_test == positive_class & y_pred == negative_class:
+            cm[0][1] = 1
+            no_p += 1
+        else:
+            cm[1][0] = 1
+            no_n +=1
+        t_p, t_n, f_p, f_n, precision, specifity, total_acc, balance_acc, recall, true_neg_rate, cover_neg, cover_pos, total_cover, f1_score, g_mean = learn_model(cm,no_p,no_n)
 
-        # try:
-        #     ax[row,column].plot(mean_fpr, mean_fpr, "--")
-        #     ax[row,column].set_title("ROC fold "+str(x+1)+".")
-        #     ax[row,column].set_ylabel('True Positive Rate')
-        #     ax[row,column].set_axis_on()
-        # except:
-        #     ax[column].plot(mean_fpr, mean_fpr, "--")
-        #     ax[column].set_title("ROC fold "+str(x+1)+".")
-        #     ax[column].set_ylabel('True Positive Rate')
-        #     ax[column].set_axis_on()
-        tp_CV.append(t_p)
-        fn_CV.append(f_n)
-        fp_CV.append(f_p)
-        tn_CV.append(t_n)
-        no_p_CV.append(no_positive_class)
-        no_n_CV.append(no_negative_class)
-        # tpr = np.interp(mean_fpr,fpr,tpr)
-        # tpr_CV.append(tpr)
-        print(f"positive_class: {positive_class}")
-        print(f"negative_class: {negative_class}")
-        print("Confusion matrix for "+str(2137)+". fold:")
-        conf_matrix=[
-        ["", positive_class,negative_class,"No. of objects","Accuracy", "Coverage"],
-        [int(positive_class), t_p, f_n, no_positive_class, precision, cover_pos],
-        [int(negative_class), f_p, t_n, no_negative_class, specifity, cover_neg]
-        ]
-        print(tabulate(conf_matrix))
-    print("**********************************")
+        
+        global tp_CV
+        global fn_CV
+        global fp_CV
+        global tn_CV
+        global no_p_CV
+        global no_n_CV
+        tp_CV += t_p
+        fn_CV+=f_n
+        fp_CV+=f_p
+        tn_CV+=t_n
+        no_p_CV+=no_positive_class
+        no_n_CV+=no_negative_class
+        
 
     
 
 y_train, y_test,  x_train, x_test = split_data(matrix,matrix_decision_class)
-
+cm = [[tp_CV,fn_CV],[fp_CV,tn_CV]]
+t_p, t_n, f_p, f_n, precision, specifity, total_acc, balance_acc, recall, true_neg_rate, cover_neg, cover_pos, total_cover, f1_score, g_mean = learn_model(cm, no_p_CV, no_n_CV)
+print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+print("________________________________")
+nr_objects = len(matrix)
+print("nr of objects: {}".format(nr_objects))
+print("matrix_decision_class: {}".format(matrix_decision_class))
+print("================================")
+print("positive_class: {}".format(positive_class))
+print("negative_class: {}".format(negative_class))
+print("================================")
+print("Precision:           {}".format(precision))
+print("Specifity:           {}".format(specifity))
+print("Total accuracy:      {}".format(total_acc))
+print("Balance accuracy:    {}".format(balance_acc))
+print("recall:              {}".format(recall))
+print("True negative rate:  {}".format(true_neg_rate))
+print("Coverage positive:   {}".format(cover_pos))
+print("Coverage negative:   {}".format(cover_neg))
+print("Total coverage:      {}".format(total_cover))
+print("F1 score:            {}".format(f1_score))
+print("================================")
+print("Confusion matrix for ALL folds:")
+conf_matrix=[
+["", positive_class,negative_class,"No. of objects","Accuracy", "Coverage"],
+[positive_class, t_p, f_n, no_p_CV, precision, cover_pos],
+[negative_class, f_p, t_n, no_n_CV, specifity, cover_neg]
+]
+print(tabulate(conf_matrix))
